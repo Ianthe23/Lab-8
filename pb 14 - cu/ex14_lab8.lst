@@ -1,0 +1,80 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, fopen, fclose, fprintf
+     5                                  import exit msvcrt.dll
+     6                                  import fopen msvcrt.dll
+     7                                  import fclose msvcrt.dll
+     8                                  import fprintf msvcrt.dll
+     9                                  
+    10                                  ; Se dau un nume de fisier si un text (definite in segmentul de date). 
+    11                                  ; Textul contine litere mici, litere mari, cifre si caractere speciale. 
+    12                                  ; Sa se transforme toate literele mari din textul dat in litere mici. 
+    13                                  ; Sa se creeze un fisier cu numele dat si sa se scrie textul obtinut in fisier.
+    14                                  segment data use32 class=data
+    15 00000000 657831342E74787400          nume_fisier db "ex14.txt", 0
+    16 00000009 7700                        mod_acces db "w", 0 ; am deschis fisierul ca sa scriem in el
+    17                                  
+    18                                  
+    19 0000000B 412162653143453164-         text db "A!be1CE1da!R", 0 ; textul pe care-l modificam ca sa-l scriem in fisier
+    19 00000014 61215200           
+    20                                      l equ $-text
+    21 00000018 00<rept>                    text_nou times l db 0
+    22 00000025 FFFFFFFF                    descriptor dd -1 ; variabila in care salvam descriptorul fisierului (pt a face referire la fisier)
+    23                                  
+    24                                  segment code use32 class=code
+    25                                      start:
+    26                                          ; apelam fopen pentru a creea fisierul
+    27                                          ; functia va returna in EAX descriptorul sau 0 in caz de eroare
+    28 00000000 68[09000000]                    push dword mod_acces
+    29 00000005 68[00000000]                    push dword nume_fisier
+    30 0000000A FF15[00000000]                  call [fopen]
+    31 00000010 83C408                          add esp, 2*4 ; eliberam parametrii de pe stiva
+    32                                  
+    33 00000013 A3[25000000]                    mov [descriptor], eax ; salvam valoarea returnata de fopen in variabila descriptor
+    34                                  
+    35 00000018 83F800                          cmp eax, 0 ; verificam daca functia fopen a creat cu succes fisierul (EAX != 0)
+    36 0000001B 744E                            je Final
+    37                                  
+    38 0000001D B90D000000                      mov ecx, l ; punem in ecx lungimea sirului pentru loop
+    39 00000022 BE00000000                      mov esi, 0 ; initializam index-ul sirului
+    40 00000027 E31F                            jecxz Sfarsit
+    41                                  
+    42                                          Repeta:
+    43 00000029 8A86[0B000000]                      mov al, [text + esi] ; punem caracter cu caracter in AL din sir
+    44 0000002F B220                                mov dl, 'a'-'A' ; punem diferenta dintre a si A pentru a modifica din litera mare in litera mica prin ADD
+    45 00000031 B340                                mov bl, 64      
+    46 00000033 B75B                                mov bh, 91      ; punem in BL si BH 64 si 91, adica primul caracter din fata lui 'A' si primul caracter de dupa 'Z' ca sa verificam
+    47                                                              ; daca litera e litera MARE
+    48 00000035 38D8                                cmp al, bl      ; comparam mai intai cu BL
+    49 00000037 7606                                jbe Nu_e_litera ; daca caracterul din AL este mai mic decat 'A', atunci sarim peste
+    50                                              
+    51 00000039 38F8                                cmp al, bh      ; comparam si cu BH daca caracterul din AL este mai mare sau egal cu 'A'
+    52 0000003B 7702                                ja Nu_e_litera_mare ; daca caracterul din AL este mai mare decat 'Z', atunci sarim peste
+    53                                  
+    54 0000003D 00D0                                add al, dl      ; daca litera din AL este mare, atunci adaugam 32 si o facem litera MICA
+    55                                  
+    56                                  
+    57                                          Nu_e_litera_mare:
+    58                                          Nu_e_litera:        
+    59 0000003F 8886[18000000]                      mov [text_nou + esi], al ; adaugam caracterul modificat/nemodificat in sirul rezultat
+    60 00000045 46                                  inc esi         ; incrementam index-ul sirului
+    61 00000046 E2E1                            loop Repeta
+    62                                                  
+    63                                  
+    64                                      Sfarsit:
+    65                                          ; scriem textul in fisierul deschis folosind fprintf
+    66 00000048 68[18000000]                    push dword text_nou
+    67 0000004D FF35[25000000]                  push dword [descriptor]
+    68 00000053 FF15[00000000]                  call [fprintf]
+    69 00000059 83C408                          add esp, 2*4
+    70                                  
+    71                                          ; apelam functia fclose pentru a inchide fisierul
+    72 0000005C FF35[25000000]                  push dword [descriptor]
+    73 00000062 FF15[00000000]                  call [fclose]
+    74 00000068 83C404                          add esp, 4
+    75                                  
+    76                                          
+    77                                      Final:
+    78 0000006B 6A00                    	    push dword 0 
+    79 0000006D FF15[00000000]          	    call [exit] 

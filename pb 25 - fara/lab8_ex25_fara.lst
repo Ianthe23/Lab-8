@@ -1,0 +1,84 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, scanf, printf
+     5                                  import exit msvcrt.dll
+     6                                  import scanf msvcrt.dll
+     7                                  import printf msvcrt.dll
+     8                                  
+     9                                  ; Sa se citeasca de la tastatura doua numere a si b (in baza 10) şi
+    10                                  ; să se determine relaţia de ordine dintre ele (a < b, a = b sau a > b). 
+    11                                  ; Afisati rezultatul în următorul format: "<a> < <b>, <a> = <b> sau <a> > <b>".
+    12                                  
+    13                                  segment data use32 class=data
+    14 00000000 <res 00000004>              a resd 1
+    15 00000004 <res 00000004>              b resd 1
+    16                                  
+    17 00000008 61203D2000                  format_mesaj_a db "a = ", 0
+    18 0000000D 62203D2000                  format_mesaj_b db "b = ", 0
+    19 00000012 256400                      format_citire db "%d", 0
+    20 00000015 2564203C20256400            format_afisare_1 db "%d < %d", 0
+    21 0000001D 2564203D20256400            format_afisare_2 db "%d = %d", 0
+    22 00000025 2564203E20256400            format_afisare_3 db "%d > %d", 0
+    23                                  
+    24                                  segment code use32 class=code
+    25                                      start:
+    26                                  
+    27 00000000 68[08000000]                    push dword format_mesaj_a
+    28 00000005 FF15[00000000]                  call [printf]
+    29 0000000B 83C404                          add esp, 4
+    30                                  
+    31 0000000E 68[00000000]                    push dword a
+    32 00000013 68[12000000]                    push dword format_citire
+    33 00000018 FF15[00000000]                  call [scanf]
+    34 0000001E 83C408                          add esp, 2*4
+    35                                  
+    36 00000021 68[0D000000]                    push dword format_mesaj_b
+    37 00000026 FF15[00000000]                  call [printf]
+    38 0000002C 83C404                          add esp, 4
+    39                                  
+    40 0000002F 68[04000000]                    push dword b
+    41 00000034 68[12000000]                    push dword format_citire
+    42 00000039 FF15[00000000]                  call [scanf]
+    43 0000003F 83C408                          add esp, 2*4
+    44                                  
+    45 00000042 A1[00000000]                    mov eax, [a]
+    46 00000047 8B1D[04000000]                  mov ebx, [b]
+    47                                  
+    48 0000004D 39D8                            cmp eax, ebx
+    49 0000004F 7C08                            jl MaiMic
+    50                                  
+    51 00000051 39D8                            cmp eax, ebx
+    52 00000053 7420                            je Egale
+    53                                  
+    54 00000055 39D8                            cmp eax, ebx
+    55 00000057 7F38                            jg MaiMare
+    56                                  
+    57                                      MaiMic:
+    58 00000059 FF35[04000000]                  push dword [b]
+    59 0000005F FF35[00000000]                  push dword [a]
+    60 00000065 68[15000000]                    push dword format_afisare_1
+    61 0000006A FF15[00000000]                  call [printf]
+    62 00000070 83C40C                          add esp, 3*4
+    63                                  
+    64 00000073 EB36                            jmp final
+    65                                  
+    66                                      Egale:
+    67 00000075 FF35[04000000]                  push dword [b]
+    68 0000007B FF35[00000000]                  push dword [a]
+    69 00000081 68[1D000000]                    push dword format_afisare_2
+    70 00000086 FF15[00000000]                  call [printf]
+    71 0000008C 83C40C                          add esp, 3*4
+    72                                  
+    73 0000008F EB1A                            jmp final
+    74                                  
+    75                                      MaiMare:
+    76 00000091 FF35[04000000]                  push dword [b]
+    77 00000097 FF35[00000000]                  push dword [a]
+    78 0000009D 68[25000000]                    push dword format_afisare_3
+    79 000000A2 FF15[00000000]                  call [printf]
+    80 000000A8 83C40C                          add esp, 3*4
+    81                                  
+    82                                      final:
+    83 000000AB 6A00                    	    push dword 0 
+    84 000000AD FF15[00000000]          	    call [exit] 

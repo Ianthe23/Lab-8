@@ -1,0 +1,31 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, scanf, printf
+     5                                  import exit msvcrt.dll
+     6                                  import scanf msvcrt.dll
+     7                                  import printf msvcrt.dll
+     8                                  
+     9                                  ;Sa se citeasca de la tastatura un numar in baza 10 si sa se afiseze valoarea acelui numar in baza 16
+    10                                  segment data use32 class=data
+    11 00000000 00000000                    n dd 0 ; definim variabila n
+    12 00000004 256400                      format_citire db "%d", 0 ; definim formatul de citire
+    13 00000007 257800                      format_afisare db "%x", 0 ; definim formatul de afisare
+    14                                  
+    15                                  segment code use32 class=code
+    16                                      start:
+    17 00000000 68[00000000]                    push dword n ; punem parametrii pe stiva de la dreapta la stanga
+    18 00000005 68[04000000]                    push dword format_citire
+    19 0000000A FF15[00000000]                  call [scanf] ; apelam functia scanf pentru citire
+    20 00000010 83C408                          add esp, 2*4 ; eliberam parametrii de pe stiva
+    21                                  
+    22 00000013 BB00000000                      mov ebx, 0
+    23 00000018 031D[00000000]                  add ebx, [n] ; pun variabila n pe registrul ebx
+    24                                  
+    25 0000001E 53                              push ebx; punem parametrii pe stiva de la dreapta la stanga
+    26 0000001F 68[07000000]                    push dword format_afisare 
+    27 00000024 FF15[00000000]                  call [printf] ; apelam functia printf pentru afisare
+    28 0000002A 83C408                          add esp, 2*4 ; eliberam parametrii de pe stiva
+    29                                  
+    30 0000002D 6A00                    	    push dword 0 
+    31 0000002F FF15[00000000]          	    call [exit] 

@@ -1,0 +1,113 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, fopen, fclose, fprintf
+     5                                  import exit msvcrt.dll
+     6                                  import fopen msvcrt.dll
+     7                                  import fclose msvcrt.dll
+     8                                  import fprintf msvcrt.dll
+     9                                  
+    10                                  ; Se da numele unui fisier si un numar pe cuvant scris in memorie. 
+    11                                  ; Sa se scrie cifrele hexazecimale ale acestui numar ca text in fisier, fiecare cifra pe o linie separata.
+    12                                  
+    13                                  segment data use32 class=data
+    14 00000000 657832332E74787400          file_name db "ex23.txt", 0
+    15 00000009 7700                        file_mode db "w", 0
+    16                                  
+    17 0000000B D204                        numar dw 1234 ; 04D2h
+    18                                      l equ 4
+    19 0000000D 00<rept>                    text times l db 0 ; ex: 04D2 ca sir de caractere
+    20 00000011 00000000                    catul dd 0
+    21 00000015 00000000                    restul dd 0
+    22                                  
+    23 00000019 25630A00                    format_afisare db "%c", 10, 0 ; 10 semnifica caract. new line
+    24 0000001D FFFFFFFF                    file_descriptor dd -1 
+    25                                  
+    26                                  segment code use32 class=code
+    27                                      start:
+    28                                          ; deschid fisierul
+    29 00000000 68[09000000]                    push dword file_mode
+    30 00000005 68[00000000]                    push dword file_name
+    31 0000000A FF15[00000000]                  call [fopen]
+    32 00000010 83C408                          add esp, 2*4
+    33                                  
+    34                                          ; verific daca s-a deschis corect
+    35 00000013 83F800                          cmp eax, 0
+    36 00000016 747F                            je final
+    37                                  
+    38 00000018 A3[1D000000]                    mov [file_descriptor], eax
+    39                                  
+    40 0000001D BF00000000                      mov edi, 0 ; indexul pentru text
+    41 00000022 B902000000                      mov ecx, 2 ; un word are 2 bytes, deci setez ecx 2 pt ca lucrez pe octetii cuvantului
+    42 00000027 BE[0B000000]                    mov esi, numar ; pun in sirul sursa numarul
+    43                                          ; in memorie, 04D2h va fi D2 04 
+    44 0000002C 46                              inc esi ; de aceea incrementez esi sa dau load mai intai la primul octet ( 04 )
+    45 0000002D FD                              std ; si setez DF = 1 ca sa decrementeze esi-ul si sa pot da load la D2
+    46                                  
+    47                                      Repeta:
+    48                                          ; AX <- octetul respectiv ( D2 de ex)
+    49                                          ; dupa impartire la 10h, AL <- D (catul), AH <- 2 (restul)
+    50 0000002E 66B80000                        mov ax, 0
+    51 00000032 B310                            mov bl, 16 ; 10h
+    52 00000034 AC                              lodsb
+    53 00000035 F6F3                            div bl
+    54                                  
+    55 00000037 B709                            mov bh, 9
+    56                                  
+    57                                          ; verific daca restul e litera 
+    58 00000039 38FC                            cmp ah, bh
+    59 0000003B 7705                            ja LiteraRest
+    60                                  
+    61                                          ; daca nu e litera, adaug 48 pentru codul ascii al cifrelor
+    62 0000003D 80C430                          add ah, 48
+    63 00000040 EB03                            jmp Cat        
+    64                                  
+    65                                      LiteraRest:
+    66 00000042 80C437                          add ah, 55 ; altfel adaug 55 pt codul ascii al literelor mari
+    67                                  
+    68                                      ; aceeasi poveste insa pentru cat
+    69                                      Cat:
+    70 00000045 38F8                            cmp al, bh
+    71 00000047 7704                            ja LiteraCat
+    72                                  
+    73 00000049 0430                            add al, 48
+    74 0000004B EB02                            jmp Adaugare
+    75                                  
+    76                                      LiteraCat:
+    77 0000004D 0437                            add al, 55
+    78                                          
+    79                                      ; adaug catul si restul in text
+    80                                      Adaugare:
+    81 0000004F 8887[0D000000]                  mov [text + edi], al
+    82 00000055 47                              inc edi
+    83                                  
+    84 00000056 88A7[0D000000]                  mov [text + edi], ah
+    85 0000005C 47                              inc edi
+    86                                  
+    87 0000005D E2CF                            loop Repeta
+    88                                  
+    89 0000005F B904000000                  mov ecx, 4 ; afisez 4 caractere, fiecare pe un rand
+    90 00000064 BE00000000                  mov esi, 0 ; indexul sirului de caractere text
+    91                                  
+    92                                      Afisare:
+    93 00000069 51                              push ecx ; salvez ecx-ul pentru loop
+    94                                  
+    95                                          ; afisez caracterul
+    96 0000006A FFB6[0D000000]                  push dword [text + esi]
+    97 00000070 68[19000000]                    push dword format_afisare
+    98 00000075 FF35[1D000000]                  push dword [file_descriptor]
+    99 0000007B FF15[00000000]                  call [fprintf]
+   100 00000081 83C40C                          add esp, 3*4
+   101                                  
+   102 00000084 46                              inc esi ; cresc indexul sirului
+   103 00000085 59                              pop ecx ; dau pop la ecx pentru loop
+   104 00000086 E2E1                            loop Afisare
+   105                                  
+   106                                          ; inchid fisierul
+   107 00000088 FF35[1D000000]                  push dword [file_descriptor]
+   108 0000008E FF15[00000000]                  call [fclose]
+   109 00000094 83C404                          add esp, 4
+   110                                  
+   111                                      final:
+   112 00000097 6A00                    	    push dword 0 
+   113 00000099 FF15[00000000]          	    call [exit] 

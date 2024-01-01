@@ -1,0 +1,84 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, fopen, fclose, fprintf
+     5                                  import exit msvcrt.dll
+     6                                  import fopen msvcrt.dll
+     7                                  import fclose msvcrt.dll
+     8                                  import fprintf msvcrt.dll
+     9                                  
+    10                                  ; Se da numele unui fisier si un numar pe cuvant scris in memorie.
+    11                                  ; Se considera numarul in reprezentarea fara semn.
+    12                                  ; Sa se scrie cifrele zecimale ale acestui numar ca text in fisier, fiecare cifra pe o linie separata.
+    13                                  
+    14                                  segment data use32 class=data
+    15 00000000 657832322E74787400          file_name db "ex22.txt", 0
+    16 00000009 7700                        file_mode db "w", 0
+    17                                  
+    18 0000000B 4522                        numar dw 8773
+    19 0000000D 00<rept>                    text times 10 db 0
+    20                                  
+    21 00000017 25630A00                    format_afisare db "%c", 10, 0
+    22 0000001B FFFFFFFF                    file_descriptor dd -1
+    23                                  
+    24                                  segment code use32 class=code
+    25                                      start:
+    26                                  
+    27 00000000 68[09000000]                    push dword file_mode
+    28 00000005 68[00000000]                    push dword file_name
+    29 0000000A FF15[00000000]                  call [fopen]
+    30 00000010 83C408                          add esp, 2*4
+    31                                  
+    32 00000013 83F800                          cmp eax, 0
+    33 00000016 746F                            je final
+    34                                  
+    35 00000018 A3[1B000000]                    mov [file_descriptor], eax
+    36                                  
+    37 0000001D B900000000                      mov ecx, 0
+    38 00000022 A1[0B000000]                    mov eax, [numar]
+    39 00000027 BB0A000000                      mov ebx, 10
+    40                                  
+    41                                      NumarCifre:
+    42 0000002C BA00000000                      mov edx, 0
+    43 00000031 F7F3                            div ebx
+    44                                  
+    45 00000033 41                              inc ecx
+    46 00000034 85C0                            test eax, eax
+    47 00000036 75F4                            jnz NumarCifre
+    48                                  
+    49 00000038 A1[0B000000]                    mov eax, [numar]
+    50 0000003D 89CF                            mov edi, ecx
+    51                                      
+    52                                      Repeta:
+    53 0000003F BA00000000                      mov edx, 0
+    54 00000044 F7F3                            div ebx
+    55                                  
+    56 00000046 80C230                          add dl, 48
+    57 00000049 4F                              dec edi
+    58 0000004A 8897[0D000000]                  mov [text + edi], dl
+    59                                  
+    60 00000050 85C0                            test eax, eax
+    61 00000052 75EB                            jnz Repeta
+    62                                  
+    63 00000054 BE00000000                      mov esi, 0
+    64                                  
+    65                                      Afisare:
+    66 00000059 51                              push ecx 
+    67                                  
+    68 0000005A FFB6[0D000000]                  push dword [text + esi]
+    69 00000060 68[17000000]                    push dword format_afisare
+    70 00000065 FF35[1B000000]                  push dword [file_descriptor]
+    71 0000006B FF15[00000000]                  call [fprintf]
+    72 00000071 83C40C                          add esp, 3*4
+    73                                  
+    74 00000074 46                              inc esi
+    75 00000075 59                              pop ecx
+    76 00000076 E2E1                            loop Afisare
+    77                                  
+    78 00000078 FF35[1B000000]                  push dword [file_descriptor]
+    79 0000007E FF15[00000000]                  call [fclose]
+    80 00000084 83C404                          add esp, 4
+    81                                  
+    82                                      final:
+    83 00000087 6A00                    	    push dword 0 
+    84 00000089 FF15[00000000]          	    call [exit] 

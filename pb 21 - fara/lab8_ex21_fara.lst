@@ -1,0 +1,77 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, scanf, printf
+     5                                  import exit msvcrt.dll
+     6                                  import scanf msvcrt.dll
+     7                                  import printf msvcrt.dll
+     8                                  
+     9                                  ; Sa se citeasca de la tastatura doua numere a si b de tip word.
+    10                                  ; Sa se afiseze in baza 16 numarul c de tip dword pentru care partea low este suma celor doua numere,
+    11                                  ; iar partea high este diferenta celor doua numere.
+    12                                  ; EX: a = 574, b = 136, c = 01B602C6h
+    13                                  
+    14                                  segment data use32 class=data
+    15 00000000 0F000000                    a dd 15
+    16 00000004 03000000                    b dd 3
+    17 00000008 00000000                    c dd 0
+    18                                  
+    19 0000000C 256400                      format_citire db "%d", 0
+    20 0000000F 72657A756C74617420-         format_afisare db "rezultat = %x", 0
+    20 00000018 3D20257800         
+    21                                  
+    22                                  segment code use32 class=code
+    23                                      start:
+    24                                          ; citesc de la tastatura numarul a
+    25 00000000 68[00000000]                    push dword a
+    26 00000005 68[0C000000]                    push dword format_citire
+    27 0000000A FF15[00000000]                  call [scanf]
+    28 00000010 83C408                          add esp, 2*4
+    29                                  
+    30                                          ; citesc de la tastatura numarul b
+    31 00000013 68[04000000]                    push dword b
+    32 00000018 68[0C000000]                    push dword format_citire
+    33 0000001D FF15[00000000]                  call [scanf]
+    34 00000023 83C408                          add esp, 2*4
+    35                                  
+    36                                          ; pun variabilele in bx si cx, fiind cuvinte
+    37 00000026 668B1D[00000000]                mov bx, [a]
+    38 0000002D 668B0D[04000000]                mov cx, [b]
+    39                                  
+    40                                          ; pun suma lor in ax, fara sa ma intereseze de carry (ax <- a + b)
+    41 00000034 6689D8                          mov ax, bx
+    42 00000037 6601C8                          add ax, cx
+    43                                  
+    44                                          ; compar variabilele ca sa nu efectuez o scadere cu rezultat negativ
+    45 0000003A 6639CB                          cmp bx, cx
+    46 0000003D 7208                            jb Jump
+    47                                  
+    48                                          ; daca a >= b
+    49 0000003F 6689DA                          mov dx, bx
+    50 00000042 6629CA                          sub dx, cx
+    51 00000045 EB08                            jmp Sfarsit
+    52                                  
+    53                                          Jump:
+    54                                              ; daca a < b
+    55 00000047 6689CA                              mov dx, cx
+    56 0000004A 6629DA                              sub dx, bx
+    57 0000004D EB00                                jmp Sfarsit
+    58                                  
+    59                                      Sfarsit:
+    60                                  
+    61                                          ; formez dublu-cuvantul cu registrii dx si ax
+    62 0000004F 6652                            push dx
+    63 00000051 6650                            push ax
+    64 00000053 58                              pop eax
+    65                                  
+    66 00000054 A3[08000000]                    mov [c], eax ; pun in c dublucuvantul rezultat
+    67                                  
+    68                                          ; afiseaz dublucuvantul pe consola
+    69 00000059 FF35[08000000]                  push dword [c]
+    70 0000005F 68[0F000000]                    push format_afisare
+    71 00000064 FF15[00000000]                  call [printf]
+    72 0000006A 83C408                          add esp, 2*4
+    73                                          
+    74                                  
+    75 0000006D 6A00                    	    push dword 0 
+    76 0000006F FF15[00000000]          	    call [exit] 

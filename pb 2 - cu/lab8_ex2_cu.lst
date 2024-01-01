@@ -1,0 +1,104 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, fopen, fclose, fscanf, printf
+     5                                  import exit msvcrt.dll
+     6                                  import fopen msvcrt.dll
+     7                                  import fclose msvcrt.dll
+     8                                  import fscanf msvcrt.dll
+     9                                  import printf msvcrt.dll
+    10                                  
+    11                                  ; Se da un fisier text. Sa se citeasca continutul fisierului, 
+    12                                  ; sa se contorizeze numarul de consoane si sa se afiseze aceasta valoare. 
+    13                                  ; Numele fisierului text este definit in segmentul de date.
+    14                                  
+    15                                  segment data use32 class=data
+    16 00000000 6578322E74787400            file_name db "ex2.txt", 0
+    17 00000008 7200                        file_mode db "r", 0
+    18                                  
+    19 0000000A 6165696F754145494F-         vocale db "aeiouAEIOU", 0
+    19 00000013 5500               
+    20                                      l equ $-vocale
+    21                                  
+    22 00000015 <res 00000001>              caracter resb 1
+    23                                  
+    24 00000016 FFFFFFFF                    file_descriptor dd -1
+    25                                  
+    26 0000001A 256300                      format_citire db "%c", 0
+    27 0000001D 4E756D6172756C2064-         format_afisare db "Numarul de consoane = %d", 0
+    27 00000026 6520636F6E736F616E-
+    27 0000002F 65203D20256400     
+    28                                  
+    29 00000036 00000000                    contor_consoane dd 0
+    30                                  
+    31                                  segment code use32 class=code
+    32                                      start:
+    33                                          ; deschid fisierul
+    34 00000000 68[08000000]                    push dword file_mode
+    35 00000005 68[00000000]                    push dword file_name
+    36 0000000A FF15[00000000]                  call [fopen]
+    37 00000010 83C408                          add esp, 2*4
+    38                                  
+    39                                          ; verific daca s-a deschis fisierul cum trebuie
+    40 00000013 83F800                          cmp eax, 0
+    41 00000016 747D                            je final
+    42                                  
+    43 00000018 A3[16000000]                    mov [file_descriptor], eax
+    44                                  
+    45                                      citire:
+    46                                          ; citesc caracter cu caracter (despartite prin pauza)
+    47 0000001D 68[15000000]                    push dword caracter
+    48 00000022 68[1A000000]                    push dword format_citire
+    49 00000027 FF35[16000000]                  push dword [file_descriptor]
+    50 0000002D FF15[00000000]                  call [fscanf]
+    51 00000033 83C40C                          add esp, 3*4
+    52                                  
+    53                                          ; fie a ajuns la EOF, fie n-a reusit sa citeasca
+    54 00000036 83F801                          cmp eax, 1
+    55 00000039 7537                            jne iesire
+    56                                  
+    57 0000003B 51                              push ecx
+    58                                  
+    59 0000003C B90B000000                      mov ecx, l ; pun lungimea sirului de vocale in ecx
+    60 00000041 83E901                          sub ecx, 1
+    61 00000044 BE00000000                      mov esi, 0 ; indexul sirului de vocale
+    62                                  
+    63                                          ; verific daca e pauza sa sar direct peste acel caracter
+    64 00000049 8A1D[15000000]                  mov bl, [caracter]
+    65 0000004F 80FB20                          cmp bl, 32
+    66 00000052 741B                            je NuConsoana
+    67                                  
+    68                                          Repeta:
+    69 00000054 8A1D[15000000]                      mov bl, [caracter]
+    70 0000005A 3A9E[0A000000]                      cmp bl, [vocale + esi] 
+    71 00000060 74BB                                je citire ; verific daca e vocala sa sar direct peste acel caracter
+    72                                  
+    73 00000062 46                                  inc esi ; altfel verific cu celelalte vocale
+    74 00000063 49                                  dec ecx
+    75 00000064 E302                                jecxz Continua
+    76 00000066 EBEC                                jmp Repeta
+    77                                  
+    78                                          Continua:
+    79 00000068 8305[36000000]01                    add dword [contor_consoane], 1
+    80                                  
+    81                                          NuConsoana:
+    82 0000006F 59                                  pop ecx
+    83 00000070 EBAB                                jmp citire
+    84                                  
+    85                                  
+    86                                      iesire:
+    87                                          ; afisam contorul de consoane
+    88 00000072 A1[36000000]                    mov eax, [contor_consoane]
+    89 00000077 50                              push eax
+    90 00000078 68[1D000000]                    push dword format_afisare
+    91 0000007D FF15[00000000]                  call [printf]
+    92 00000083 83C408                          add esp, 2*4
+    93                                  
+    94                                          ; inchidem fisierul
+    95 00000086 FF35[16000000]                  push dword [file_descriptor]
+    96 0000008C FF15[00000000]                  call [fclose]
+    97 00000092 83C404                          add esp, 1*4
+    98                                  
+    99                                      final:
+   100 00000095 6A00                    	    push dword 0 
+   101 00000097 FF15[00000000]          	    call [exit] 

@@ -1,0 +1,61 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, scanf, printf
+     5                                  import exit msvcrt.dll
+     6                                  import scanf msvcrt.dll
+     7                                  import printf msvcrt.dll
+     8                                  
+     9                                  ; Sa se citeasca de la tastatura un numar hexazecimal format din 2 cifre.
+    10                                  ; Sa se afiseze pe ecran acest numar in baza 10, interpretat atat ca numar fara semn cat si ca numar cu semn (pe 8 biti).
+    11                                  
+    12                                  segment data use32 class=data
+    13 00000000 <res 00000001>              numar resb 1
+    14                                  
+    15 00000001 257800                      format_citire db "%x", 0
+    16 00000004 25640A00                    format_afisare db "%d", 10, 0
+    17                                  
+    18                                  segment code use32 class=code
+    19                                      start:
+    20                                          ; citesc numarul de la tastatura
+    21 00000000 68[00000000]                    push dword numar
+    22 00000005 68[01000000]                    push dword format_citire
+    23 0000000A FF15[00000000]                  call [scanf]
+    24 00000010 83C408                          add esp, 2*4
+    25                                  
+    26                                          ; pun byte-ul citit in eax
+    27 00000013 B800000000                      mov eax, 0
+    28 00000018 A0[00000000]                    mov al, [numar]
+    29                                          
+    30                                          ; verific daca are si interpretare cu semn
+    31 0000001D 3D80000000                      cmp eax, 128
+    32 00000022 7311                            jae Negativ
+    33                                  
+    34                                          ; afisez numarul daca n-are interpretare cu semn
+    35 00000024 50                              push dword eax
+    36 00000025 68[04000000]                    push dword format_afisare
+    37 0000002A FF15[00000000]                  call [printf]
+    38 00000030 83C408                          add esp, 2*4
+    39 00000033 EB2C                            jmp final
+    40                                  
+    41                                          Negativ:
+    42                                              ; daca are interpretare cu semn, afisez mai intai pe cea fara semn
+    43 00000035 50                                  push dword eax
+    44 00000036 68[04000000]                        push dword format_afisare
+    45 0000003B FF15[00000000]                      call [printf]
+    46 00000041 83C408                              add esp, 2*4
+    47                                  
+    48                                              ; creez interpretarea cu semn (ex nr = 129, rezulta ca in interpretarea cu semn va fi -127)
+    49 00000044 B800010000                          mov eax, 256
+    50 00000049 2B05[00000000]                      sub eax, [numar]
+    51 0000004F 6BC0FF                              imul eax, -1
+    52                                  
+    53                                              ; afisez interpretarea cu semn
+    54 00000052 50                                  push dword eax
+    55 00000053 68[04000000]                        push dword format_afisare
+    56 00000058 FF15[00000000]                      call [printf]
+    57 0000005E 83C408                              add esp, 2*4
+    58                                  
+    59                                      final:
+    60 00000061 6A00                    	    push dword 0 
+    61 00000063 FF15[00000000]          	    call [exit] 

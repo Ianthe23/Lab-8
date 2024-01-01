@@ -1,0 +1,76 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, fopen, fclose, fprintf
+     5                                  import exit msvcrt.dll
+     6                                  import fopen msvcrt.dll
+     7                                  import fclose msvcrt.dll
+     8                                  import fprintf msvcrt.dll
+     9                                  
+    10                                  ; Se dau un nume de fisier si un text (definite in segmentul de date). 
+    11                                  ; Textul contine litere mici, litere mari, cifre si caractere speciale.
+    12                                  ; Sa se transforme toate literele mici din textul dat in litere mari.
+    13                                  ; Sa se creeze un fisier cu numele dat si sa se scrie textul obtinut in fisier.
+    14                                  
+    15                                  segment data use32 class=data
+    16 00000000 657831332E74787400          file_name db "ex13.txt", 0
+    17 00000009 7700                        file_mode db "w", 0
+    18                                  
+    19 0000000B 416E612C204D617269-         text db "Ana, Maria si Alex au mere!", 0
+    19 00000014 6120736920416C6578-
+    19 0000001D 206175206D65726521-
+    19 00000026 00                 
+    20                                      l equ $-text
+    21 00000027 00<rept>                    text_nou times l db 0
+    22                                  
+    23 00000043 257300                      format_afisare db "%s", 0
+    24 00000046 FFFFFFFF                    file_descriptor dd -1
+    25                                  
+    26                                  segment code use32 class=code
+    27                                      start:
+    28                                  
+    29 00000000 68[09000000]                    push dword file_mode
+    30 00000005 68[00000000]                    push dword file_name
+    31 0000000A FF15[00000000]                  call [fopen]
+    32 00000010 83C408                          add esp, 2*4
+    33                                  
+    34 00000013 83F800                          cmp eax, 0
+    35 00000016 7454                            je final
+    36                                  
+    37 00000018 A3[46000000]                    mov [file_descriptor], eax
+    38 0000001D B91C000000                      mov ecx, l
+    39 00000022 BE00000000                      mov esi, 0
+    40                                  
+    41                                      Citire:
+    42 00000027 8A86[0B000000]                  mov al, [text + esi]
+    43 0000002D B361                            mov bl, 'a'
+    44 0000002F B77A                            mov bh, 'z'
+    45                                  
+    46 00000031 38D8                            cmp al, bl
+    47 00000033 7206                            jb Continua
+    48                                  
+    49 00000035 38F8                            cmp al, bh
+    50 00000037 7702                            ja Continua
+    51                                  
+    52 00000039 2C20                            sub al, 32
+    53                                  
+    54                                      Continua:
+    55 0000003B 8886[27000000]                  mov [text_nou + esi], al
+    56 00000041 46                              inc esi
+    57 00000042 E2E3                            loop Citire
+    58                                  
+    59                                      Iesire:
+    60                                          ; afisam textul obtinut
+    61 00000044 68[27000000]                    push dword text_nou
+    62 00000049 68[43000000]                    push dword format_afisare
+    63 0000004E FF35[46000000]                  push dword [file_descriptor]
+    64 00000054 FF15[00000000]                  call [fprintf]
+    65 0000005A 83C40C                          add esp, 3*4
+    66                                  
+    67 0000005D FF35[46000000]                  push dword [file_descriptor]
+    68 00000063 FF15[00000000]                  call [fclose]
+    69 00000069 83C404                          add esp, 4
+    70                                  
+    71                                      final:
+    72 0000006C 6A00                    	    push dword 0 
+    73 0000006E FF15[00000000]          	    call [exit] 

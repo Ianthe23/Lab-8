@@ -1,0 +1,44 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, scanf, printf
+     5                                  import exit msvcrt.dll
+     6                                  import scanf msvcrt.dll
+     7                                  import printf msvcrt.dll
+     8                                  
+     9                                  ; Sa se citeasca de la tastatura doua numere a si b (in baza 16) si sa se calculeze a+b.
+    10                                  ; Sa se afiseze rezultatul adunarii in baza 10.
+    11                                  
+    12                                  segment data use32 class=data
+    13 00000000 00000000                    a dd 0
+    14 00000004 00000000                    b dd 0
+    15 00000008 00000000                    rezultat dd 0
+    16                                  
+    17 0000000C 257800                      format_citire db "%x", 0
+    18 0000000F 61202B2062203D2025-         format_afisare db "a + b = %d", 0
+    18 00000018 6400               
+    19                                  
+    20                                  segment code use32 class=code
+    21                                      start:
+    22                                  
+    23 00000000 68[00000000]                    push dword a
+    24 00000005 68[0C000000]                    push dword format_citire
+    25 0000000A FF15[00000000]                  call [scanf]
+    26 00000010 83C408                          add esp, 2*4
+    27                                  
+    28 00000013 68[04000000]                    push dword b
+    29 00000018 68[0C000000]                    push dword format_citire
+    30 0000001D FF15[00000000]                  call [scanf]
+    31 00000023 83C408                          add esp, 2*4
+    32                                  
+    33 00000026 A1[00000000]                    mov eax, [a]
+    34 0000002B 0305[04000000]                  add eax, [b]
+    35 00000031 A3[08000000]                    mov [rezultat], eax
+    36                                  
+    37 00000036 FF35[08000000]                  push dword [rezultat]
+    38 0000003C 68[0F000000]                    push dword format_afisare
+    39 00000041 FF15[00000000]                  call [printf]
+    40 00000047 83C408                          add esp, 2*4
+    41                                          
+    42 0000004A 6A00                    	    push dword 0 
+    43 0000004C FF15[00000000]          	    call [exit] 

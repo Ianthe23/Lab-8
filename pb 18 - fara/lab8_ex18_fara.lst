@@ -1,0 +1,72 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, scanf, printf
+     5                                  import exit msvcrt.dll
+     6                                  import scanf msvcrt.dll
+     7                                  import printf msvcrt.dll
+     8                                  
+     9                                  ; Sa se citeasca de la tastatura un numar in baza 10 si un numar in baza 16.
+    10                                  ; Sa se afiseze in baza 10 numarul de biti 1 ai sumei celor doua numere citite. 
+    11                                  ; Exemplu:
+    12                                  ;   a = 32 = 0010 0000b
+    13                                  ;   b = 1Ah = 0001 1010b
+    14                                  ;   32 + 1Ah = 0011 1010b
+    15                                  ; Se va afisa pe ecran valoarea 4.
+    16                                  
+    17                                  segment data use32 class=data
+    18 00000000 <res 00000004>              a resd 1
+    19 00000004 <res 00000004>              b resd 1
+    20 00000008 00000000                    contor dd 0
+    21                                  
+    22 0000000C 61203D2000                  format_mesaj_a db "a = ", 0
+    23 00000011 62203D2000                  format_mesaj_b db "b = ", 0
+    24 00000016 256400                      format_citire_a db "%d", 0
+    25 00000019 257800                      format_citire_b db "%x", 0
+    26 0000001C 6E756D6172756C2064-         format_afisare db "numarul de biti 1 : %d", 0
+    26 00000025 652062697469203120-
+    26 0000002E 3A20256400         
+    27                                  
+    28                                  
+    29                                  segment code use32 class=code
+    30                                      start:
+    31 00000000 68[0C000000]                    push dword format_mesaj_a
+    32 00000005 FF15[00000000]                  call [printf]
+    33 0000000B 83C404                          add esp, 4
+    34                                  
+    35 0000000E 68[00000000]                    push dword a
+    36 00000013 68[16000000]                    push dword format_citire_a
+    37 00000018 FF15[00000000]                  call [scanf]
+    38 0000001E 83C408                          add esp, 2*4
+    39                                  
+    40 00000021 68[11000000]                    push dword format_mesaj_b
+    41 00000026 FF15[00000000]                  call [printf]
+    42 0000002C 83C404                          add esp, 4
+    43                                  
+    44 0000002F 68[04000000]                    push dword b
+    45 00000034 68[19000000]                    push dword format_citire_b
+    46 00000039 FF15[00000000]                  call [scanf]
+    47 0000003F 83C408                          add esp, 2*4
+    48                                  
+    49 00000042 A1[00000000]                    mov eax, [a]
+    50 00000047 0305[04000000]                  add eax, [b]
+    51                                  
+    52 0000004D 89C3                            mov ebx, eax
+    53                                  
+    54                                          Repeta:
+    55 0000004F D1C3                                rol ebx, 1
+    56 00000051 7307                                jnc NuBit1
+    57                                  
+    58 00000053 8305[08000000]01                    add dword [contor], 1
+    59                                  
+    60                                          NuBit1:
+    61 0000005A 39C3                                cmp ebx, eax
+    62 0000005C 75F1                                jne Repeta
+    63                                  
+    64 0000005E FF35[08000000]                  push dword [contor]
+    65 00000064 68[1C000000]                    push dword format_afisare
+    66 00000069 FF15[00000000]                  call [printf]
+    67 0000006F 83C408                          add esp, 2*4
+    68                                              
+    69 00000072 6A00                    	    push dword 0 
+    70 00000074 FF15[00000000]          	    call [exit] 

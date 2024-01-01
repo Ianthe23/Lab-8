@@ -1,0 +1,64 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, scanf, printf
+     5                                  import exit msvcrt.dll
+     6                                  import scanf msvcrt.dll
+     7                                  import printf msvcrt.dll
+     8                                  
+     9                                  ; Sa se citeasca de la tastatura doua numere a si b (in baza 10) si sa se calculeze: (a+b) / (a-b).
+    10                                  ; Catul impartirii se va salva in memorie in variabila "rezultat" (definita in segmentul de date).
+    11                                  ; Valorile se considera cu semn.
+    12                                  
+    13                                  segment data use32 class=data
+    14 00000000 <res 00000004>              a resd 1
+    15 00000004 <res 00000004>              b resd 1
+    16                                  
+    17 00000008 <res 00000004>              rezultat resd 1
+    18                                  
+    19 0000000C 61203D2000                  format_mesaj_a db "a = ", 0
+    20 00000011 62203D2000                  format_mesaj_b db "b = ", 0
+    21 00000016 256400                      format_citire db "%d", 0
+    22 00000019 2861202B206229202F-         format_afisare db "(a + b) / (a - b) = %d", 0
+    22 00000022 202861202D20622920-
+    22 0000002B 3D20256400         
+    23                                  
+    24                                  segment code use32 class=code
+    25                                      start:
+    26 00000000 68[0C000000]                    push dword format_mesaj_a
+    27 00000005 FF15[00000000]                  call [printf]
+    28 0000000B 83C404                          add esp, 4
+    29                                  
+    30 0000000E 68[00000000]                    push dword a
+    31 00000013 68[16000000]                    push dword format_citire
+    32 00000018 FF15[00000000]                  call [scanf]
+    33 0000001E 83C408                          add esp, 2*4
+    34                                  
+    35 00000021 68[11000000]                    push dword format_mesaj_b
+    36 00000026 FF15[00000000]                  call [printf]
+    37 0000002C 83C404                          add esp, 4
+    38                                  
+    39 0000002F 68[04000000]                    push dword b
+    40 00000034 68[16000000]                    push dword format_citire
+    41 00000039 FF15[00000000]                  call [scanf]
+    42 0000003F 83C408                          add esp, 2*4
+    43                                  
+    44 00000042 A1[00000000]                    mov eax, [a]
+    45 00000047 0305[04000000]                  add eax, [b]
+    46                                  
+    47 0000004D 8B1D[00000000]                  mov ebx, [a]
+    48 00000053 2B1D[04000000]                  sub ebx, [b]
+    49                                  
+    50 00000059 99                              cdq
+    51 0000005A F7FB                            idiv ebx
+    52                                  
+    53 0000005C A3[08000000]                    mov [rezultat], eax
+    54                                  
+    55 00000061 FF35[08000000]                  push dword [rezultat]
+    56 00000067 68[19000000]                    push dword format_afisare
+    57 0000006C FF15[00000000]                  call [printf]
+    58 00000072 83C408                          add esp, 2*4
+    59                                  
+    60                                  
+    61 00000075 6A00                    	    push dword 0 
+    62 00000077 FF15[00000000]          	    call [exit] 

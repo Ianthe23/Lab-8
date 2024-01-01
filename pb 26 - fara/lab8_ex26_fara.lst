@@ -1,0 +1,58 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, scanf, printf
+     5                                  import exit msvcrt.dll
+     6                                  import scanf msvcrt.dll
+     7                                  import printf msvcrt.dll
+     8                                  
+     9                                  ; Se citesc de la tastatura doua numere a si b. 
+    10                                  ; Sa se calculeze valoarea expresiei (a-b)*k, k fiind o constanta definita in segmentul de date.
+    11                                  ; Afisati valoarea expresiei (in baza 16).
+    12                                  
+    13                                  segment data use32 class=data
+    14 00000000 <res 00000004>              a resd 1
+    15 00000004 <res 00000004>              b resd 1
+    16                                  
+    17                                      k equ 9
+    18                                  
+    19 00000008 61203D2000                  format_mesaj_a db "a = ", 0
+    20 0000000D 62203D2000                  format_mesaj_b db "b = ", 0
+    21 00000012 256400                      format_citire db "%d", 0
+    22 00000015 2861202D206229202A-         format_afisare db "(a - b) * k = %x", 0
+    22 0000001E 206B203D20257800   
+    23                                  
+    24                                  segment code use32 class=code
+    25                                      start:
+    26                                  
+    27 00000000 68[08000000]                    push dword format_mesaj_a
+    28 00000005 FF15[00000000]                  call [printf]
+    29 0000000B 83C404                          add esp, 4
+    30                                  
+    31 0000000E 68[00000000]                    push dword a
+    32 00000013 68[12000000]                    push dword format_citire
+    33 00000018 FF15[00000000]                  call [scanf]
+    34 0000001E 83C408                          add esp, 2*4
+    35                                  
+    36 00000021 68[0D000000]                    push dword format_mesaj_b
+    37 00000026 FF15[00000000]                  call [printf]
+    38 0000002C 83C404                          add esp, 4
+    39                                  
+    40 0000002F 68[04000000]                    push dword b
+    41 00000034 68[12000000]                    push dword format_citire
+    42 00000039 FF15[00000000]                  call [scanf]
+    43 0000003F 83C408                          add esp, 2*4
+    44                                  
+    45 00000042 A1[00000000]                    mov eax, [a]
+    46 00000047 2B05[04000000]                  sub eax, [b]
+    47                                  
+    48 0000004D BB09000000                      mov ebx, k
+    49 00000052 F7EB                            imul ebx
+    50                                          
+    51 00000054 50                              push dword eax
+    52 00000055 68[15000000]                    push dword format_afisare
+    53 0000005A FF15[00000000]                  call [printf]
+    54 00000060 83C408                          add esp, 2*4
+    55                                  
+    56 00000063 6A00                    	    push dword 0 
+    57 00000065 FF15[00000000]          	    call [exit] 

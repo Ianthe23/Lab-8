@@ -1,0 +1,72 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, fopen, fclose, fprintf
+     5                                  import exit msvcrt.dll
+     6                                  import fopen msvcrt.dll
+     7                                  import fclose msvcrt.dll
+     8                                  import fprintf msvcrt.dll
+     9                                  
+    10                                  ; Se dau un nume de fisier si un text (definite in segmentul de date).
+    11                                  ; Textul contine litere mici, litere mari, cifre si caractere speciale. 
+    12                                  ; Sa se inlocuiasca toate spatiile din textul dat cu caracterul 'S'.
+    13                                  ; Sa se creeze un fisier cu numele dat si sa se scrie textul obtinut prin inlocuire in fisier.
+    14                                  
+    15                                  segment data use32 class=data
+    16 00000000 657832352E74787400          file_name db "ex25.txt", 0
+    17 00000009 7700                        file_mode db "w", 0
+    18                                  
+    19 0000000B 416E612C2061726520-         text db "Ana, are mere!", 0
+    19 00000014 6D6572652100       
+    20                                      l equ $-text
+    21                                  
+    22 0000001A FFFFFFFF                    file_descriptor dd -1
+    23                                  
+    24                                  segment code use32 class=code
+    25                                      start:
+    26                                  
+    27                                          ; deschidem fisierul
+    28 00000000 68[09000000]                    push dword file_mode
+    29 00000005 68[00000000]                    push dword file_name
+    30 0000000A FF15[00000000]                  call [fopen]
+    31 00000010 83C408                          add esp, 2*4
+    32                                  
+    33                                          ; verific daca s-a deschis corect fisierul
+    34 00000013 83F800                          cmp eax, 0
+    35 00000016 7449                            je final
+    36                                  
+    37 00000018 A3[1A000000]                    mov [file_descriptor], eax
+    38                                  
+    39 0000001D B90F000000                      mov ecx, l ; ECX <- lungimea textului
+    40 00000022 BE00000000                      mov esi, 0 ; index-ul textului
+    41 00000027 E338                            jecxz final ; verific daca nu-i vid textul
+    42                                  
+    43                                          Repeta:
+    44                                              ; verific daca, caracterul curent este spatiu sau nu
+    45 00000029 8A86[0B000000]                      mov al, [text + esi]
+    46 0000002F 3C20                                cmp al, 32
+    47 00000031 7508                                jne NuSpatiu
+    48                                  
+    49                                              ; daca e spatiu, il inlocuiesc cu 'S'
+    50 00000033 B453                                mov ah, 'S'
+    51 00000035 88A6[0B000000]                      mov [text + esi], ah
+    52                                  
+    53                                          NuSpatiu:
+    54 0000003B 46                                  inc esi ; altfel doar cresc index-ul
+    55 0000003C E2EB                                loop Repeta
+    56                                  
+    57                                          Sfarsit:
+    58                                              ; scriem in fisier textul modificat
+    59 0000003E 68[0B000000]                        push dword text
+    60 00000043 FF35[1A000000]                      push dword [file_descriptor]
+    61 00000049 FF15[00000000]                      call [fprintf]
+    62 0000004F 83C408                              add esp, 2*4
+    63                                  
+    64                                              ; inchidem fisierul
+    65 00000052 FF35[1A000000]                      push dword [file_descriptor]
+    66 00000058 FF15[00000000]                      call [fclose]
+    67 0000005E 83C404                              add esp, 4
+    68                                  
+    69                                      final:
+    70 00000061 6A00                    	    push dword 0 
+    71 00000063 FF15[00000000]          	    call [exit] 

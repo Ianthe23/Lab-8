@@ -1,0 +1,116 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, fopen, fclose, fprintf
+     5                                  import exit msvcrt.dll
+     6                                  import fopen msvcrt.dll
+     7                                  import fclose msvcrt.dll
+     8                                  import fprintf msvcrt.dll
+     9                                  
+    10                                  ; Se dau un nume de fisier si un text (definite in segmentul de date). 
+    11                                  ; Textul contine litere mici, litere mari, cifre si caractere speciale.
+    12                                  ; Sa se inlocuiasca toate caracterele speciale din textul dat cu caracterul 'X'. 
+    13                                  ; Sa se creeze un fisier cu numele dat si sa se scrie textul obtinut in fisier.
+    14                                  
+    15                                  segment data use32 class=data
+    16                                  
+    17 00000000 657831352E74787400          file_name db "ex15.txt", 0
+    18 00000009 7700                        file_mode db "w", 0
+    19                                      
+    20 0000000B 257300                      format_afisare db "%s", 0
+    21 0000000E FFFFFFFF                    file_descriptor dd -1
+    22                                  
+    23 00000012 416E612C204D617269-         text db "Ana, Maria, Alex au 4 pisici!", 0
+    23 0000001B 612C20416C65782061-
+    23 00000024 752034207069736963-
+    23 0000002D 692100             
+    24                                      l equ $-text
+    25 00000030 00<rept>                    text_nou times l db 0
+    26                                  
+    27                                  segment code use32 class=code
+    28                                      start:
+    29 00000000 68[09000000]                    push dword file_mode
+    30 00000005 68[00000000]                    push dword file_name
+    31 0000000A FF15[00000000]                  call [fopen]
+    32 00000010 83C408                          add esp, 2*4
+    33                                  
+    34 00000013 83F800                          cmp eax, 0
+    35 00000016 0F8480000000                    je final
+    36                                  
+    37 0000001C A3[0E000000]                    mov [file_descriptor], eax
+    38                                  
+    39 00000021 B91E000000                      mov ecx, l
+    40 00000026 BE00000000                      mov esi, 0
+    41                                  
+    42                                      Repeta:
+    43 0000002B 8A86[12000000]                  mov al, [text + esi]
+    44 00000031 B300                            mov bl, 0 ; NULL
+    45                                  
+    46 00000033 38D8                            cmp al, bl
+    47 00000035 7434                            je NuCaractSpec
+    48                                  
+    49 00000037 B330                            mov bl, 48 ; '0'
+    50 00000039 B739                            mov bh, 57 ; '9'
+    51                                  
+    52 0000003B 38D8                            cmp al, bl
+    53 0000003D 7302                            jae VerifCifra
+    54                                  
+    55 0000003F EB04                            jmp Continua1
+    56                                  
+    57                                      VerifCifra:
+    58 00000041 38F8                            cmp al, bh
+    59 00000043 7626                            jbe NuCaractSpec
+    60                                  
+    61                                      Continua1:
+    62 00000045 B341                            mov bl, 65 ; 'A'
+    63 00000047 B75A                            mov bh, 90 ; 'Z'
+    64                                  
+    65 00000049 38D8                            cmp al, bl
+    66 0000004B 7302                            jae VerifLiteraMare
+    67                                  
+    68 0000004D EB04                            jmp Continua2
+    69                                  
+    70                                      VerifLiteraMare:
+    71 0000004F 38F8                            cmp al, bh
+    72 00000051 7618                            jbe NuCaractSpec
+    73                                  
+    74                                      Continua2:
+    75 00000053 B361                            mov bl, 97 ; 'a'
+    76 00000055 B77A                            mov bh, 122 ; 'z'
+    77                                  
+    78 00000057 38D8                            cmp al, bl
+    79 00000059 7302                            jae VerifLiteraMica
+    80                                  
+    81 0000005B EB04                            jmp Continua3
+    82                                  
+    83                                      VerifLiteraMica:
+    84 0000005D 38F8                            cmp al, bh
+    85 0000005F 760A                            jbe NuCaractSpec
+    86                                  
+    87                                      Continua3:
+    88 00000061 B058                            mov al, 88
+    89 00000063 8886[30000000]                  mov [text_nou + esi], al
+    90 00000069 EB06                            jmp Increase
+    91                                  
+    92                                      NuCaractSpec:
+    93 0000006B 8886[30000000]                  mov [text_nou + esi], al
+    94                                  
+    95                                      Increase:
+    96 00000071 46                              inc esi
+    97 00000072 E2B7                            loop Repeta
+    98                                  
+    99                                      Afisare:
+   100 00000074 68[30000000]                    push dword text_nou
+   101 00000079 68[0B000000]                    push dword format_afisare
+   102 0000007E FF35[0E000000]                  push dword [file_descriptor]
+   103 00000084 FF15[00000000]                  call [fprintf]
+   104 0000008A 83C40C                          add esp, 3*4
+   105                                  
+   106 0000008D FF35[0E000000]                  push dword [file_descriptor]
+   107 00000093 FF15[00000000]                  call [fclose]
+   108 00000099 83C404                          add esp, 4
+   109                                  
+   110                                      
+   111                                      final:
+   112 0000009C 6A00                    	    push dword 0 
+   113 0000009E FF15[00000000]          	    call [exit] 
