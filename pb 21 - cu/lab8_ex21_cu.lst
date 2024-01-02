@@ -1,0 +1,83 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, fopen, fclose, fprintf
+     5                                  import exit msvcrt.dll
+     6                                  import fopen msvcrt.dll
+     7                                  import fclose msvcrt.dll
+     8                                  import fprintf msvcrt.dll
+     9                                  
+    10                                  ; Se dau un nume de fisier si un text (definite in segmentul de date).
+    11                                  ; Textul contine litere mici, cifre si spatii. Sa se inlocuiasca toate cifrele de pe pozitii impare cu caracterul ‘X’.
+    12                                  ; Sa se creeze un fisier cu numele dat si sa se scrie textul obtinut in fisier.
+    13                                  
+    14                                  segment data use32 class=data
+    15 00000000 657832312E74787400          file_name db "ex21.txt", 0
+    16 00000009 7700                        file_mode db "w", 0
+    17                                  
+    18 0000000B 616E6120323332206D-         text db "ana 232 maria 43 ivona 1", 0
+    18 00000014 617269612034332069-
+    18 0000001D 766F6E61203100     
+    19                                      l equ $-text
+    20 00000024 00<rept>                    text_nou times l db 0
+    21                                  
+    22 0000003D 257300                      format_afisare db "%s", 0
+    23 00000040 FFFFFFFF                    file_descriptor dd -1
+    24                                  
+    25                                  segment code use32 class=code
+    26                                      start:
+    27                                          ; deschid fisierul
+    28 00000000 68[09000000]                    push dword file_mode
+    29 00000005 68[00000000]                    push dword file_name
+    30 0000000A FF15[00000000]                  call [fopen]
+    31 00000010 83C408                          add esp, 2*4
+    32                                  
+    33                                          ; verific daca s-a deschis corect
+    34 00000013 83F800                          cmp eax, 0
+    35 00000016 745A                            je final
+    36                                  
+    37 00000018 A3[40000000]                    mov [file_descriptor], eax
+    38                                  
+    39 0000001D B919000000                      mov ecx, l ; pun lungimea textului in ECX pentru loop
+    40 00000022 BE00000000                      mov esi, 0 ; indexul textului
+    41                                  
+    42                                      Repeta:
+    43 00000027 8A86[0B000000]                  mov al, [text + esi] ; pun caracterul curent in AL
+    44 0000002D B330                            mov bl, '0'
+    45 0000002F B739                            mov bh, '9'
+    46                                  
+    47                                          ; verific daca AL >= '0' si AL <= '9', adica daca este cifra
+    48 00000031 38D8                            cmp al, bl
+    49 00000033 720C                            jb NuCifra
+    50                                  
+    51 00000035 38F8                            cmp al, bh
+    52 00000037 7708                            ja NuCifra
+    53                                  
+    54                                          ; daca este cifra, verific daca pozitia din sir este impara, shiftand-o la dreapta cu o pozitie (am impartit-o la 2)
+    55 00000039 89F2                            mov edx, esi
+    56 0000003B D1EA                            shr edx, 1
+    57 0000003D 7302                            jnc NuCifra ; daca CF = 0, atunci pozitia nu-i impara
+    58                                  
+    59 0000003F B058                            mov al, 'X' ; daca CF = 1, schimb caracterul in 'X'
+    60                                  
+    61                                      NuCifra:
+    62 00000041 8886[24000000]                  mov [text_nou + esi], al ; adaug caracterul ne - / modificat in textul nou
+    63 00000047 46                              inc esi
+    64 00000048 E2DD                            loop Repeta
+    65                                  
+    66                                      Afisare:
+    67                                          ; afisez textul nou
+    68 0000004A 68[24000000]                    push dword text_nou
+    69 0000004F 68[3D000000]                    push dword format_afisare
+    70 00000054 FF35[40000000]                  push dword [file_descriptor]
+    71 0000005A FF15[00000000]                  call [fprintf]
+    72 00000060 83C40C                          add esp, 3*4
+    73                                  
+    74                                          ; inchid fisierul
+    75 00000063 FF35[40000000]                  push dword [file_descriptor]
+    76 00000069 FF15[00000000]                  call [fclose]
+    77 0000006F 83C404                          add esp, 4
+    78                                  
+    79                                      final:
+    80 00000072 6A00                    	    push dword 0 
+    81 00000074 FF15[00000000]          	    call [exit] 
