@@ -1,0 +1,82 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, fopen, fclose, fscanf, printf
+     5                                  import exit msvcrt.dll
+     6                                  import fopen msvcrt.dll
+     7                                  import fclose msvcrt.dll
+     8                                  import fscanf msvcrt.dll
+     9                                  import printf msvcrt.dll
+    10                                  
+    11                                  ; Se da un fisier text. Sa se citeasca continutul fisierului, sa se contorizeze numarul de vocale si sa se afiseze aceasta valoare. 
+    12                                  ; Numele fisierului text este definit in segmentul de date.
+    13                                  
+    14                                  segment data use32 class=data
+    15 00000000 6578312E74787400            file_name db "ex1.txt", 0
+    16 00000008 7200                        file_mode db "r", 0
+    17                                  
+    18 0000000A <res 00000004>              caracter resd 1
+    19 0000000E 6165696F754145494F-         vocale db "aeiouAEIOU", 0
+    19 00000017 5500               
+    20 00000019 00000000                    nr_vocale dd 0
+    21                                  
+    22 0000001D 256300                      format_citire db "%c", 0
+    23 00000020 6E7220646520766F63-         format_afisare db "nr de vocale = %d", 0
+    23 00000029 616C65203D20256400 
+    24 00000032 FFFFFFFF                    file_descriptor dd -1
+    25                                  
+    26                                  segment code use32 class=code
+    27                                      start:
+    28                                  
+    29 00000000 68[08000000]                    push dword file_mode
+    30 00000005 68[00000000]                    push dword file_name
+    31 0000000A FF15[00000000]                  call [fopen]
+    32 00000010 83C408                          add esp, 2*4
+    33                                  
+    34 00000013 83F800                          cmp eax, 0
+    35 00000016 746B                            je final
+    36                                  
+    37 00000018 A3[32000000]                    mov [file_descriptor], eax
+    38                                  
+    39                                      Citire:
+    40 0000001D 68[0A000000]                    push dword caracter
+    41 00000022 68[1D000000]                    push dword format_citire
+    42 00000027 FF35[32000000]                  push dword [file_descriptor]
+    43 0000002D FF15[00000000]                  call [fscanf]
+    44 00000033 83C40C                          add esp, 3*4
+    45                                  
+    46 00000036 83F801                          cmp eax, 1
+    47 00000039 7525                            jne Afisare
+    48                                  
+    49 0000003B A0[0A000000]                    mov al, byte [caracter]
+    50 00000040 B90A000000                      mov ecx, 10
+    51 00000045 BE00000000                      mov esi, 0
+    52                                  
+    53                                          Repeta:
+    54 0000004A 8A9E[0E000000]                      mov bl, byte[vocale + esi]
+    55                                  
+    56 00000050 38D8                                cmp al, bl
+    57 00000052 7507                                jne NuVocala
+    58                                  
+    59 00000054 8305[19000000]01                    add dword [nr_vocale], 1
+    60                                  
+    61                                          NuVocala:
+    62 0000005B 46                                  inc esi
+    63 0000005C E2EC                                loop Repeta
+    64                                  
+    65 0000005E EBBD                            jmp Citire
+    66                                  
+    67                                  
+    68                                      Afisare:
+    69 00000060 FF35[19000000]                  push dword [nr_vocale]
+    70 00000066 68[20000000]                    push dword format_afisare
+    71 0000006B FF15[00000000]                  call [printf]
+    72 00000071 83C408                          add esp, 2*4
+    73                                  
+    74 00000074 FF35[32000000]                  push dword [file_descriptor]
+    75 0000007A FF15[00000000]                  call [fclose]
+    76 00000080 83C404                          add esp, 4
+    77                                  
+    78                                      final:
+    79 00000083 6A00                    	    push dword 0 
+    80 00000085 FF15[00000000]          	    call [exit] 
