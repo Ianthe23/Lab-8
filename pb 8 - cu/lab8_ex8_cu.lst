@@ -1,0 +1,104 @@
+     1                                  bits 32 
+     2                                  global start        
+     3                                  
+     4                                  extern exit, fopen, fclose, fscanf, printf            
+     5                                  import exit msvcrt.dll
+     6                                  import fopen msvcrt.dll
+     7                                  import fclose msvcrt.dll
+     8                                  import fscanf msvcrt.dll
+     9                                  import printf msvcrt.dll  
+    10                                  segment data use32 class=data
+    11 00000000 6578382E74787400            file_name db "ex8.txt", 0
+    12 00000008 7200                        file_mode db "r", 0
+    13                                      
+    14 0000000A <res 00000004>              caracter resd 1
+    15 0000000E 00000000                    litera dd 0
+    16 00000012 00000000                    frecventa dd 0
+    17 00000016 00000000<rept>              sir times 26 dd 0
+    18                                      
+    19 0000007E 256300                      format_citire  db "%c", 0
+    20 00000081 6C6974657261203D20-         format_afisare db "litera = %c, frecventa = %d", 0
+    20 0000008A 25632C206672656376-
+    20 00000093 656E7461203D202564-
+    20 0000009C 00                 
+    21 0000009D FF                          file_descriptor db -1
+    22                                  
+    23                                  segment code use32 class=code
+    24                                      start:
+    25 00000000 68[08000000]                    push dword file_mode
+    26 00000005 68[00000000]                    push dword file_name
+    27 0000000A FF15[00000000]                  call [fopen]
+    28 00000010 83C408                          add esp, 4*2
+    29                                          
+    30 00000013 83F800                          cmp eax, 0
+    31 00000016 0F84A6000000                    je final
+    32                                          
+    33 0000001C A3[9D000000]                    mov [file_descriptor], eax
+    34                                          
+    35                                      citire:
+    36 00000021 68[0A000000]                    push dword caracter
+    37 00000026 68[7E000000]                    push dword format_citire
+    38 0000002B FF35[9D000000]                  push dword [file_descriptor]
+    39 00000031 FF15[00000000]                  call [fscanf]
+    40 00000037 83C40C                          add esp, 4*3
+    41                                      
+    42 0000003A 83F801                          cmp eax, 1
+    43 0000003D 7520                            jne continua
+    44                                      
+    45 0000003F A0[0A000000]                    mov al, byte [caracter]
+    46 00000044 B341                            mov bl, 'A'
+    47                                          
+    48 00000046 38D8                            cmp al, bl
+    49 00000048 72D7                            jb citire
+    50                                          
+    51 0000004A B35A                            mov bl, 'Z'
+    52                                          
+    53 0000004C 38D8                            cmp al, bl
+    54 0000004E 77D1                            ja citire
+    55                                          
+    56 00000050 2C41                            sub al, 'A'
+    57 00000052 B304                            mov bl, 4
+    58 00000054 F6E3                            mul bl
+    59 00000056 8080[16000000]01                add byte[sir+eax], 1
+    60 0000005D EBC2                            jmp citire
+    61                                      
+    62                                      continua:
+    63 0000005F B91A000000                      mov ecx, 26
+    64 00000064 BE00000000                      mov esi, 0
+    65                                          
+    66                                      repeta:
+    67 00000069 8B86[16000000]                  mov eax, [sir+esi]
+    68 0000006F 8B1D[12000000]                  mov ebx, [frecventa]
+    69                                          
+    70 00000075 39D8                            cmp eax, ebx
+    71 00000077 721B                            jb nu_frecventa
+    72                                          
+    73 00000079 A3[12000000]                    mov [frecventa], eax
+    74 0000007E 89F0                            mov eax, esi
+    75 00000080 BA00000000                      mov edx, 0
+    76 00000085 BB04000000                      mov ebx, 4
+    77 0000008A F7F3                            div ebx
+    78                                          
+    79                                          ;add eax, 'A'
+    80 0000008C 83C041                          add eax, 'A'
+    81 0000008F A3[0E000000]                    mov [litera], eax
+    82                                          
+    83                                      nu_frecventa:
+    84 00000094 83C604                          add esi, 4
+    85 00000097 E2D0                            loop repeta
+    86                                          
+    87                                      afisare:
+    88                                      
+    89 00000099 FF35[12000000]                  push dword [frecventa]
+    90 0000009F FF35[0E000000]                  push dword [litera]
+    91 000000A5 68[81000000]                    push dword format_afisare
+    92 000000AA FF15[00000000]                  call [printf]
+    93 000000B0 83C40C                          add esp, 4*3
+    94                                          
+    95 000000B3 FF35[9D000000]                  push dword [file_descriptor]
+    96 000000B9 FF15[00000000]                  call [fclose]
+    97 000000BF 83C404                          add esp, 4
+    98                                      
+    99                                      final:
+   100 000000C2 6A00                            push    dword 0      
+   101 000000C4 FF15[00000000]                  call    [exit]

@@ -1,0 +1,79 @@
+     1                                  bits 32
+     2                                  global start
+     3                                  
+     4                                  extern exit, fopen, fclose, scanf, fprintf, printf
+     5                                  import exit msvcrt.dll
+     6                                  import fopen msvcrt.dll
+     7                                  import fclose msvcrt.dll
+     8                                  import printf msvcrt.dll
+     9                                  import scanf msvcrt.dll
+    10                                  import fprintf msvcrt.dll
+    11                                  
+    12                                  ; Se da un nume de fisier (definit in segmentul de date). 
+    13                                  ; Sa se creeze un fisier cu numele dat, apoi sa se citeasca de la tastatura numere si 
+    14                                  ; sa se scrie valorile citite in fisier pana cand se citeste de la tastatura valoarea 0.
+    15                                  
+    16                                  segment data use32 class=data
+    17 00000000 657831322E74787400          file_name db "ex12.txt", 0
+    18 00000009 7700                        file_mode db "w", 0
+    19                                  
+    20 0000000B <res 00000004>              numar resd 1
+    21                                  
+    22 0000000F 496E74726F64756365-         format_mesaj_citire db "Introduceti numerele: ", 0
+    22 00000018 7469206E756D657265-
+    22 00000021 6C653A2000         
+    23 00000026 6E756D6572656C6520-         format_mesaj_afisare db "numerele sunt: ", 0
+    23 0000002F 73756E743A2000     
+    24 00000036 256400                      format_citire db "%d", 0
+    25 00000039 25642000                    format_afisare db "%d ", 0
+    26 0000003D FFFFFFFF                    file_descriptor dd -1
+    27                                  
+    28                                  segment code use32 class=code
+    29                                      start:
+    30                                  
+    31 00000000 68[09000000]                    push dword file_mode
+    32 00000005 68[00000000]                    push dword file_name
+    33 0000000A FF15[00000000]                  call [fopen]
+    34 00000010 83C408                          add esp, 2*4
+    35                                  
+    36 00000013 83F800                          cmp eax, 0
+    37 00000016 7469                            je final
+    38                                  
+    39 00000018 A3[3D000000]                    mov [file_descriptor], eax
+    40                                  
+    41 0000001D 68[0F000000]                    push dword format_mesaj_citire
+    42 00000022 FF15[00000000]                  call [printf]
+    43 00000028 83C404                          add esp, 4
+    44                                  
+    45 0000002B 68[26000000]                    push dword format_mesaj_afisare
+    46 00000030 FF35[3D000000]                  push dword [file_descriptor]
+    47 00000036 FF15[00000000]                  call [fprintf]
+    48 0000003C 83C408                          add esp, 2*4
+    49                                  
+    50                                      Citire:
+    51 0000003F 68[0B000000]                    push dword numar
+    52 00000044 68[36000000]                    push dword format_citire
+    53 00000049 FF15[00000000]                  call [scanf]
+    54 0000004F 83C408                          add esp, 2*4
+    55                                  
+    56 00000052 A1[0B000000]                    mov eax, [numar]
+    57 00000057 85C0                            test eax, eax
+    58                                  
+    59 00000059 7417                            je Iesire
+    60                                  
+    61 0000005B 50                              push dword eax
+    62 0000005C 68[39000000]                    push dword format_afisare
+    63 00000061 FF35[3D000000]                  push dword [file_descriptor]
+    64 00000067 FF15[00000000]                  call [fprintf]
+    65 0000006D 83C40C                          add esp, 3*4
+    66                                  
+    67 00000070 EBCD                            jmp Citire
+    68                                  
+    69                                      Iesire:
+    70 00000072 FF35[3D000000]                  push dword [file_descriptor]
+    71 00000078 FF15[00000000]                  call [fclose]
+    72 0000007E 83C404                          add esp, 4
+    73                                  
+    74                                      final:
+    75 00000081 6A00                    	    push dword 0 
+    76 00000083 FF15[00000000]          	    call [exit] 
